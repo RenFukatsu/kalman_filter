@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>kalman-filter</name>
+  <version>0.0.0</version>
+  <description>kalman filter ros package</description>
+  <maintainer email="fukatsuren88@gmail.com">Ren Fukatsu</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+
+  <export>
+  </export>
+</package>

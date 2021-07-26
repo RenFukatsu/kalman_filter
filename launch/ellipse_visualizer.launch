@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<launch>
+    <param name="use_sim_time" value="true" />
+
+    <arg name="bag_dir" default="/home/amsl/bagfiles/roomba/mario_cart_20210701" />
+    <arg name="bag_command" default="$(arg bag_dir)/roomba1_2021-07-01-19-19-15.bag  $(arg bag_dir)/roomba3_2021-07-01-19-31-08.bag  $(arg bag_dir)/roomba6_2021-07-01-19-24-28.bag $(arg bag_dir)/roomba2_2021-07-01-19-20-15.bag  $(arg bag_dir)/roomba3_2021-07-01-19-31-47.bag  $(arg bag_dir)/roomba6_2021-07-01-19-26-02.bag $(arg bag_dir)/roomba2_2021-07-01-19-21-22.bag $(arg bag_dir)/roomba4_2021-07-01-19-20-22.bag  $(arg bag_dir)/roomba6_2021-07-01-19-30-27.bag $(arg bag_dir)/roomba2_2021-07-01-19-32-15.bag  $(arg bag_dir)/roomba5_2021-07-01-19-21-24.bag  $(arg bag_dir)/roomba6_2021-07-01-19-38-56.bag $(arg bag_dir)/roomba2_2021-07-01-19-33-52.bag  $(arg bag_dir)/roomba5_2021-07-01-19-22-19.bag $(arg bag_dir)/roomba2_2021-07-01-19-39-45.bag  $(arg bag_dir)/roomba5_2021-07-01-19-38-50.bag" />
+    <arg name="bag_target" default="$(arg bag_dir)/target/roomba1.bag $(arg bag_dir)/target/roomba2.bag $(arg bag_dir)/target/roomba3.bag $(arg bag_dir)/target/roomba4.bag $(arg bag_dir)/target/roomba5.bag $(arg bag_dir)/target/roomba6.bag" />
+    <arg name="map_file" default="$(find roomba_visualizer)/map/map.yaml" />
+    <arg name="rviz_config" default="$(find kalman-filter)/rviz/ellipse.rviz" />
+
+    <arg name="add_bag_option" default="" />
+    <node pkg="rosbag" type="play" name="rosbag_play" args="--clock $(arg add_bag_option) $(arg bag_command) $(arg bag_target)" output="screen" required="true" />
+
+    <node pkg="map_server" type="map_server" name="map_server" args="$(arg map_file)" />
+    <node pkg="kalman-filter" type="ellipse_visualizer" name="ellipse_visualizer" />
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config)" />
+
+    <include file="$(find multi_robots_tf)/launch/roomba_tf2.launch">
+        <arg name="roomba" default="roomba1" />
+    </include>
+    <include file="$(find multi_robots_tf)/launch/roomba_tf2.launch">
+        <arg name="roomba" default="roomba2" />
+    </include>
+    <include file="$(find multi_robots_tf)/launch/roomba_tf2.launch">
+        <arg name="roomba" default="roomba3" />
+    </include>
+    <include file="$(find multi_robots_tf)/launch/roomba_tf2.launch">
+        <arg name="roomba" default="roomba4" />
+    </include>
+    <include file="$(find multi_robots_tf)/launch/roomba_tf2.launch">
+        <arg name="roomba" default="roomba5" />
+    </include>
+    <include file="$(find multi_robots_tf)/launch/roomba_tf2.launch">
+        <arg name="roomba" default="roomba6" />
+    </include>
+
+</launch>

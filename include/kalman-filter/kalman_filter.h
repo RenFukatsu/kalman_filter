@@ -49,30 +49,30 @@ class KalmanFilter {
 
     // ref: https://myenigma.hatenablog.com/category/robot?page=1403618922
     void calculate_likelihood() {
-       static const double CHI2 = 9.21034;  // chi-square, 99%
-       Eigen::Matrix2d m = p_.block<2, 2>(0, 0);
-       Eigen::EigenSolver<Eigen::Matrix2d> solver(m);
-       if (solver.info()) {
-          std::cerr << "Eigen solver error : " << solver.info() << std::endl;
-          return;
-       }
-       Eigen::Vector2d e_values = solver.eigenvalues().real();
-       Eigen::Matrix2cd e_vectors = solver.eigenvectors();
-       if (e_values(0) > e_values(1)) {
-          ellipse_major_axis_ = std::sqrt(CHI2 * e_values(0));
-          ellipse_short_axis_ = std::sqrt(CHI2 * e_values(1));
-          ellipse_theta_ = std::atan2(e_vectors.col(0).y().real(), e_vectors.col(0).x().real());
-       } else {
-          ellipse_major_axis_ = std::sqrt(CHI2 * e_values(1));
-          ellipse_short_axis_ = std::sqrt(CHI2 * e_values(0));
-          ellipse_theta_ = std::atan2(e_vectors.col(1).y().real(), e_vectors.col(1).x().real());
-       }
+        static const double CHI2 = 9.21034;  // chi-square, 99%
+        Eigen::Matrix2d m = p_.block<2, 2>(0, 0);
+        Eigen::EigenSolver<Eigen::Matrix2d> solver(m);
+        if (solver.info() != Eigen::Success) {
+            std::cerr << "Eigen solver error : " << solver.info() << std::endl;
+            return;
+        }
+        Eigen::Vector2d e_values = solver.eigenvalues().real();
+        Eigen::Matrix2cd e_vectors = solver.eigenvectors();
+        if (e_values(0) > e_values(1)) {
+            ellipse_major_axis_ = std::sqrt(CHI2 * e_values(0));
+            ellipse_short_axis_ = std::sqrt(CHI2 * e_values(1));
+            ellipse_theta_ = std::atan2(e_vectors.col(0).y().real(), e_vectors.col(0).x().real());
+        } else {
+            ellipse_major_axis_ = std::sqrt(CHI2 * e_values(1));
+            ellipse_short_axis_ = std::sqrt(CHI2 * e_values(0));
+            ellipse_theta_ = std::atan2(e_vectors.col(1).y().real(), e_vectors.col(1).x().real());
+        }
 
-       if (ellipse_major_axis_ * ellipse_short_axis_ > 1e-5) {
-          likelihood_ = 1. / (ellipse_major_axis_ * ellipse_short_axis_);
-       } else {
-          likelihood_ = 1e5;
-       }
+        if (ellipse_major_axis_ * ellipse_short_axis_ > 1e-5) {
+            likelihood_ = 1. / (ellipse_major_axis_ * ellipse_short_axis_);
+        } else {
+            likelihood_ = 1e5;
+        }
     }
 
  public:
@@ -105,6 +105,15 @@ class KalmanFilter {
         measurement_update(measured_x, measured_y);
         calculate_likelihood();
     }
+
+    void estimate_update(double measured_time) {
+        motion_update(measured_time);
+        calculate_likelihood();
+    }
+
+    double get_x() { return x_(0); }
+
+    double get_y() { return x_(1); }
 
     double get_likelihood() { return likelihood_; }
 
