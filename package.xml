@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>kalman-filter</name>
+  <name>kalman_filter</name>
   <version>0.0.0</version>
   <description>kalman filter ros package</description>
   <maintainer email="fukatsuren88@gmail.com">Ren Fukatsu</maintainer>
@@ -10,6 +10,16 @@
   <depend>roscpp</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
+  <depend>color_detector_msgs</depend>
+  <depend>color_detector_srvs</depend>
+  <depend>color_detector_params</depend>
+  <depend>dynamixel_angle_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <build_depend>message_generation</build_depend>
+  <exec_depend>message_runtime</exec_depend>
 
   <export>
   </export>

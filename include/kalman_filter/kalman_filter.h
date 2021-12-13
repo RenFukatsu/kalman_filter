@@ -113,7 +113,18 @@ class KalmanFilter {
 
     double get_x() { return x_(0); }
 
+    double get_vx() { return x_(2); }
+
     double get_y() { return x_(1); }
+
+    double get_vy() { return x_(3); }
+
+    std::vector<double> get_p() {
+        std::vector<double> p(p_.data(), p_.data() + p_.rows() * p_.cols());
+        return p;
+    }
+
+
 
     double get_likelihood() { return likelihood_; }
 

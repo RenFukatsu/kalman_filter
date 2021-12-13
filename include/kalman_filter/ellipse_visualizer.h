@@ -11,7 +11,7 @@
 
 #include "color_detector_msgs/TargetPosition.h"
 #include "color_detector_params/hsv.h"
-#include "kalman-filter/kalman_filter.h"
+#include "kalman_filter/kalman_filter.h"
 
 class EllipseVisualizer {
  public:
