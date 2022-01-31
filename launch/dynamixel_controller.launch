@@ -16,5 +16,6 @@
         <param name="MEASUREMENT_NOIZE" value="$(arg measurement_noize)" />
         <param name="LIFETIME_THRESHOLD" value="$(arg lifetime_threshold)" />
         <rosparam command="load" file="$(arg target_index_color_list_file)" />
+        <rosparam command="load" file="$(find kalman_filter)/config/tracker_roombas.yaml" />
     </node>
 </launch>

@@ -18,13 +18,19 @@ class DynamixelController {
  public:
     DynamixelController();
     void read_targets_info_parameter();
+    void read_tracker_ids();
     void pose_callback(const geometry_msgs::PoseWithCovarianceStampedConstPtr&, size_t);
     void update_kalman_filter(size_t, const geometry_msgs::PoseWithCovarianceStampedConstPtr&);
     void calc_target_pose_on_world(std::string, const color_detector_msgs::TargetPositionConstPtr&,
                                    const geometry_msgs::TransformStamped&, geometry_msgs::PoseStamped*);
-    void set_color_map();
-    void visualize_ellipse();
     void timer_callback(const ros::TimerEvent&);
+    void controll_dynamixel();
+    bool is_near_to_observe(int, int);
+    double norm(const geometry_msgs::Pose& a, const geometry_msgs::Pose& b);
+    double norm(const geometry_msgs::Point& a, const geometry_msgs::Point& b);
+    double norm(double x1, double y1, double x2, double y2);
+    void direct_camera(int, int);
+    double calc_direction_angle(const geometry_msgs::Pose&, const geometry_msgs::Pose&);
     void process();
 
  private:
@@ -38,15 +44,15 @@ class DynamixelController {
     std::vector<ros::Subscriber> pose_subs_;
     std::map<int, KalmanFilter> kalman_filters_;
     std::vector<std::pair<int, std::string>> targets_info_;
+    std::vector<int> tracker_robot_ids_;
     int HZ;
     int MIN_CLUSTER;
     double MOTION_NOISE;
     double MEASUREMENT_NOISE;
     double LIFETIME_THRESHOLD;
+    double OBSERVABLE_DISTANCE;
     bool USE_DYNAMIXEL;
     ros::Timer timer_;
-    ros::Publisher ellipse_pub_;
-    std::map<std::string, std_msgs::ColorRGBA> color_map_;
     std::vector<geometry_msgs::PoseWithCovarianceStamped> poses_;
 };
 

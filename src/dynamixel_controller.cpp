@@ -7,35 +7,34 @@ DynamixelController::DynamixelController() : private_nh_("~"), tf_listener_(tf_b
     private_nh_.param("MOTION_NOISE", MOTION_NOISE, 0.03);
     private_nh_.param("MEASUREMENT_NOISE", MEASUREMENT_NOISE, 0.1);
     private_nh_.param("LIFETIME_THRESHOLD", LIFETIME_THRESHOLD, 0.1);
+    private_nh_.param("OBSERVABLE_DISTANCE", OBSERVABLE_DISTANCE, 8.0);
 
     read_targets_info_parameter();
+    read_tracker_ids();
     std::vector<std::string> colors;
     color_detector_params_hsv::init(colors);
     poses_.resize(colors.size());
     pose_subs_.resize(colors.size());
-    dynamixel_pubs_.resize(targets_info_.size());
+    dynamixel_pubs_.resize(tracker_robot_ids_.size());
     for (size_t i = 0; i < colors.size(); i++) {
         std::string topic = "/roomba" + std::to_string(i) + "/amcl_pose";
         pose_subs_[i] = nh_.subscribe<geometry_msgs::PoseWithCovarianceStamped>(
             topic.c_str(), 1, boost::bind(&DynamixelController::pose_callback, this, _1, i));
     }
-    for (size_t i = 0; i < targets_info_.size(); i++) {
-        ROS_INFO_STREAM("target roomba" << targets_info_[i].first << "'s color is " << targets_info_[i].second);
-        std::string roomba = "roomba" + std::to_string(targets_info_[i].first);
+    for (size_t i = 0; i < tracker_robot_ids_.size(); i++) {
+        std::string roomba = "roomba" + std::to_string(tracker_robot_ids_[i]);
         dynamixel_pubs_[i] = nh_.advertise<dynamixel_angle_msgs::DynamixelAngle>(roomba + "/dynamixel/angle", 1);
     }
 
     target_pub_ = nh_.advertise<kalman_filter::TargetArray>("target", 1);
-    ellipse_pub_ = private_nh_.advertise<visualization_msgs::MarkerArray>("ellipses", 1);
-    set_color_map();
 }
 
 void DynamixelController::read_targets_info_parameter() {
     XmlRpc::XmlRpcValue index_list, color_list;
-    ROS_ASSERT(private_nh_.getParam("ROOMBA_INDEXES", index_list));
+    ROS_ASSERT(private_nh_.getParam("TARGET_INDEXES", index_list));
     ROS_ASSERT(index_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
 
-    ROS_ASSERT(private_nh_.getParam("ROOMBA_COLORS", color_list));
+    ROS_ASSERT(private_nh_.getParam("TARGET_COLORS", color_list));
     ROS_ASSERT(color_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
 
     ROS_ASSERT(index_list.size() == color_list.size());
@@ -44,6 +43,17 @@ void DynamixelController::read_targets_info_parameter() {
         ROS_ASSERT(index_list[i].getType() == XmlRpc::XmlRpcValue::TypeInt);
         ROS_ASSERT(color_list[i].getType() == XmlRpc::XmlRpcValue::TypeString);
         targets_info_.emplace_back(index_list[i], color_list[i]);
+    }
+}
+
+void DynamixelController::read_tracker_ids() {
+    XmlRpc::XmlRpcValue id_list;
+    ROS_ASSERT(private_nh_.getParam("TRACKER_ROOMBA_IDS", id_list));
+    ROS_ASSERT(id_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
+
+    for (size_t i = 0; i < id_list.size(); i++) {
+        ROS_ASSERT(id_list[i].getType() == XmlRpc::XmlRpcValue::TypeInt);
+        tracker_robot_ids_.push_back(id_list[i]);
     }
 }
 
@@ -85,72 +95,6 @@ void DynamixelController::calc_target_pose_on_world(std::string roomba,
     return;
 }
 
-void DynamixelController::set_color_map() {
-    color_map_["green"].r = 0.0f;
-    color_map_["green"].g = 0.5f;
-    color_map_["green"].b = 0.0f;
-    color_map_["green"].a = 0.3f;
-    color_map_["yellow"].r = 1.0f;
-    color_map_["yellow"].g = 1.0f;
-    color_map_["yellow"].b = 0.0f;
-    color_map_["yellow"].a = 0.3f;
-    color_map_["blue"].r = 0.0f;
-    color_map_["blue"].g = 0.0f;
-    color_map_["blue"].b = 1.0f;
-    color_map_["blue"].a = 0.3f;
-    color_map_["orange"].r = 1.0f;
-    color_map_["orange"].g = 0.6f;
-    color_map_["orange"].b = 0.0f;
-    color_map_["orange"].a = 0.3f;
-    color_map_["purple"].r = 0.5f;
-    color_map_["purple"].g = 0.0f;
-    color_map_["purple"].b = 0.5f;
-    color_map_["purple"].a = 0.3f;
-    color_map_["red"].r = 1.0f;
-    color_map_["red"].g = 0.0f;
-    color_map_["red"].b = 0.0f;
-    color_map_["red"].a = 0.3f;
-}
-
-void DynamixelController::visualize_ellipse() {
-    visualization_msgs::MarkerArray markers;
-    for (size_t i = 0; i < targets_info_.size(); i++) {
-        if (kalman_filters_.count(targets_info_[i].first) == 0) continue;
-        std::string roomba = "roomba" + std::to_string(targets_info_[i].first);
-        visualization_msgs::Marker marker;
-        marker.header.frame_id = "map";
-        marker.header.stamp = ros::Time::now();
-        marker.ns = roomba + "/kf";
-        marker.id = i;
-
-        marker.type = visualization_msgs::Marker::CYLINDER;
-        marker.lifetime = ros::Duration();
-        if (kalman_filters_[targets_info_[i].first].get_likelihood() < LIFETIME_THRESHOLD) {
-            marker.action = visualization_msgs::Marker::DELETE;
-            markers.markers.push_back(marker);
-            continue;
-        }
-        marker.action = visualization_msgs::Marker::ADD;
-
-        std::vector<double> ellipse = kalman_filters_[targets_info_[i].first].get_ellipse();
-        marker.scale.x = ellipse[0];
-        marker.scale.y = ellipse[1];
-        marker.scale.z = 0.2;
-        marker.pose.position.x = kalman_filters_[targets_info_[i].first].get_x();
-        marker.pose.position.y = kalman_filters_[targets_info_[i].first].get_y();
-        marker.pose.position.z = 0.2;
-        double theta = std::acos(ellipse[1] / ellipse[0]);
-        marker.pose.orientation.w = std::cos(theta / 2);
-        marker.pose.orientation.x = std::cos(ellipse[2]) * std::sin(theta / 2);
-        marker.pose.orientation.y = std::sin(ellipse[2]) * std::sin(theta / 2);
-        marker.pose.orientation.z = 0.0;
-        marker.color = color_map_[targets_info_[i].second];
-
-        markers.markers.push_back(marker);
-    }
-    ellipse_pub_.publish(markers);
-}
-
 void DynamixelController::timer_callback(const ros::TimerEvent &event) {
     kalman_filter::TargetArray msg;
     msg.header.frame_id = "map";
@@ -173,7 +117,84 @@ void DynamixelController::timer_callback(const ros::TimerEvent &event) {
     }
     target_pub_.publish(msg);
 
+    controll_dynamixel();
+
     // visualize_ellipse();
+}
+
+void DynamixelController::controll_dynamixel() {
+    static std::map<int, int> direct_count;
+    for (size_t i = 0; i < tracker_robot_ids_.size(); i++) {
+        int tracker_id = tracker_robot_ids_[i];
+        std::vector<int> observable_targets;
+        for (size_t j = 0; j < targets_info_.size(); j++) {
+            int target_id = targets_info_[j].first;
+            if (is_near_to_observe(tracker_id, target_id)) {
+                observable_targets.push_back(target_id);
+            }
+        }
+        int min_direct_count = 1e8;
+        int direct_target_id = -1;
+        for (auto oti : observable_targets) {
+            if (min_direct_count > direct_count[oti]) {
+                min_direct_count = direct_count[oti];
+                direct_target_id = oti;
+            }
+        }
+        if (direct_target_id != -1) {
+            direct_count[direct_target_id]++;
+            direct_camera(tracker_id, direct_target_id);
+        }
+    }
+}
+
+void DynamixelController::direct_camera(int tracker_id, int target_id) {
+    double radian = calc_direction_angle(poses_[tracker_id].pose.pose, poses_[target_id].pose.pose);
+    for (size_t i = 0; i < tracker_robot_ids_.size(); i++) {
+        if (tracker_robot_ids_[i] == tracker_id) {
+            dynamixel_angle_msgs::DynamixelAngle msg;
+            msg.theta = radian;
+            dynamixel_pubs_[i].publish(msg);
+        }
+    }
+}
+
+double DynamixelController::calc_direction_angle(const geometry_msgs::Pose &target,
+                                                 const geometry_msgs::Pose &tracker) {
+    double tx = target.position.x;
+    double ty = target.position.y;
+    double sx = tracker.position.x;
+    double sy = tracker.position.y;
+    double theta = std::atan2(ty - sy, tx - sx);
+    tf2::Quaternion quat;
+    tf2::convert(tracker.orientation, quat);
+    double r, p, y;
+    tf2::Matrix3x3(quat).getRPY(r, p, y);
+    double radian = theta - y;
+    if (radian < 0) {
+        radian += 2 * M_PI;
+    }
+
+    return radian;
+}
+
+bool DynamixelController::is_near_to_observe(int tracker_id, int target_id) {
+    const auto &tracker_pose = poses_[tracker_id].pose.pose;
+    const auto &target_pose = poses_[target_id].pose.pose;
+    if (norm(tracker_pose, target_pose) <= OBSERVABLE_DISTANCE) return true;
+    return false;
+}
+
+double DynamixelController::norm(const geometry_msgs::Pose &a, const geometry_msgs::Pose &b) {
+    return norm(a.position, b.position);
+}
+
+double DynamixelController::norm(const geometry_msgs::Point &a, const geometry_msgs::Point &b) {
+    return norm(a.x, a.y, b.x, b.y);
+}
+
+double DynamixelController::norm(double x1, double y1, double x2, double y2) {
+    return std::sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
 }
 
 void DynamixelController::process() {
