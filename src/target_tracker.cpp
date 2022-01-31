@@ -240,7 +240,7 @@ void TargetTracker::timer_callback(const ros::TimerEvent &event) {
     for (size_t i = 0; i < robots_.size(); i++) {
         if (kalman_filters_.count(robots_[i].second) == 0) continue;
         ros::Time now = ros::Time::now();
-        auto& kf = kalman_filters_[robots_[i].second];
+        auto &kf = kalman_filters_[robots_[i].second];
         kf.estimate_update((now - start_time_).toSec());
         kalman_filter::Target target;
         target.header.frame_id = "map";

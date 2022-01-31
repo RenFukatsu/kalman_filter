@@ -1,2 +1,4 @@
-ROOMBA_INDEXES: [1, 3, 5]
-ROOMBA_COLORS: ["green", "blue", "purple"]
+# ROOMBA_INDEXES: [2, 3, 5, 8]
+# ROOMBA_COLORS: ["yellow", "blue", "purple", "navy"]
+ROOMBA_INDEXES: [2, 3]
+ROOMBA_COLORS: ["yellow", "blue"]

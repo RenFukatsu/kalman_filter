@@ -57,3 +57,12 @@ target_link_libraries(target_tracker
   ${catkin_LIBRARIES}
   ${Eigen3_LIBRARIES}
 )
+
+add_executable(dynamixel_controller src/dynamixel_controller_node.cpp src/dynamixel_controller.cpp)
+
+add_dependencies(dynamixel_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(dynamixel_controller
+  ${catkin_LIBRARIES}
+  ${Eigen3_LIBRARIES}
+)
