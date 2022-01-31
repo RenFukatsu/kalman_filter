@@ -17,6 +17,7 @@
 class TargetTracker {
  public:
     TargetTracker();
+    void read_robots_parameter();
     void position_callback(const color_detector_msgs::TargetPositionConstPtr&);
     void angle_callback(const color_detector_msgs::TargetAngleListConstPtr&);
     void update_kalman_filter(size_t, const color_detector_msgs::TargetPositionConstPtr&);
@@ -40,13 +41,14 @@ class TargetTracker {
     std::vector<ros::Subscriber> angle_subs_;
     std::vector<ros::ServiceClient> color_enable_clients_;
     std::map<std::string, KalmanFilter> kalman_filters_;
-    std::vector<std::string> colors_;
+    std::vector<std::pair<int, std::string>> robots_;
     std::vector<std::map<std::string, bool>> color_enables_;
     int HZ;
     int MIN_CLUSTER;
     double MOTION_NOISE;
     double MEASUREMENT_NOISE;
     double LIFETIME_THRESHOLD;
+    bool USE_DYNAMIXEL;
     ros::Timer timer_;
     ros::Publisher ellipse_pub_;
     std::map<std::string, std_msgs::ColorRGBA> color_map_;

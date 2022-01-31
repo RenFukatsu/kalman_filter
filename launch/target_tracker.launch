@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="hz" default="10" />
+    <arg name="use_dynamixel" default="true" />
+    <arg name="min_cluster" default="100" />
+    <arg name="motion_noize" default="0.03" />
+    <arg name="measurement_noize" default="0.1" />
+    <arg name="lifetime_threshold" default="0.1" />
+    <arg name="target_index_color_list_file" default="$(find kalman_filter)/config/target_param.yaml" />
+
+    <node pkg="kalman_filter" type="target_tracker" name="target_tracker" output="screen">
+        <param name="HZ" value="$(arg hz)" />
+        <param name="USE_DYNAMIXEL" value="$(arg use_dynamixel)" />
+        <param name="MIN_CLUSTER" value="$(arg min_cluster)" />
+        <param name="MOTION_NOIZE" value="$(arg motion_noize)" />
+        <param name="MEASUREMENT_NOIZE" value="$(arg measurement_noize)" />
+        <param name="LIFETIME_THRESHOLD" value="$(arg lifetime_threshold)" />
+        <rosparam command="load" file="$(arg target_index_color_list_file)" />
+    </node>
+</launch>
